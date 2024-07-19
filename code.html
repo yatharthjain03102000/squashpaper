@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound App</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #status {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="status">Press play to start the process</div>
+        <button id="play">Play</button>
+        <button id="pause">Pause</button>
+        <button id="restart">Restart</button>
+    </div>
+
+    <audio id="beep" src="sounds/Beep.mp3"></audio>
+    <audio id="sound1" src="sounds/1.mp3"></audio>
+    <audio id="sound2" src="sounds/2.mp3"></audio>
+    <audio id="sound3" src="sounds/3.mp3"></audio>
+    <audio id="sound4" src="sounds/4.mp3"></audio>
+
+    <script>
+        const statusLabel = document.getElementById("status");
+        const playButton = document.getElementById("play");
+        const pauseButton = document.getElementById("pause");
+        const restartButton = document.getElementById("restart");
+        const beepSound = document.getElementById("beep");
+        const sounds = [
+            document.getElementById("sound1"),
+            document.getElementById("sound2"),
+            document.getElementById("sound3"),
+            document.getElementById("sound4")
+        ];
+
+        const phases = [
+            6.000, 5.538, 5.143, 4.800, 4.500, 4.235, 4.000, 3.789, 3.600, 3.429,
+            3.273, 3.130, 3.000, 2.880, 2.769, 2.667, 2.571, 2.483, 2.400, 2.323, 2.250
+        ];
+
+        let currentPhase = 0;
+        let isPaused = false;
+        let scheduledEvent = null;
+        let endTime = 0;
+        let lastPlayedNumber = null;
+        let remainingTime = 0;
+
+        function playRandomSound() {
+            lastPlayedNumber = Math.floor(Math.random() * 4);
+            sounds[lastPlayedNumber].play();
+            statusLabel.textContent = `Playing\nTransition: ${currentPhase + 1}\nNumber: ${lastPlayedNumber + 1}`;
+        }
+
+        function startPhase() {
+            if (currentPhase < phases.length && !isPaused) {
+                endTime = Date.now() + 60000;
+                scheduledEvent = setInterval(playSound, phases[currentPhase] * 1000);
+            } else if (!isPaused) {
+                statusLabel.textContent = "Done!";
+            }
+        }
+
+        function playSound() {
+            if (Date.now() >= endTime) {
+                clearInterval(scheduledEvent);
+                currentPhase++;
+                if (currentPhase < phases.length) {
+                    statusLabel.textContent = `Transition: ${currentPhase + 1}`;
+                    beepSound.play();
+                    startPhase();
+                } else {
+                    statusLabel.textContent = "Done!";
+                }
+                return;
+            }
+            playRandomSound();
+        }
+
+        function startProcess() {
+            if (isPaused) {
+                endTime = Date.now() + remainingTime;
+                scheduledEvent = setInterval(playSound, phases[currentPhase] * 1000);
+                playSound();
+            } else {
+                currentPhase = 0;
+                startPhase();
+                playSound();
+            }
+            isPaused = false;
+        }
+
+        function pauseProcess() {
+            if (scheduledEvent) {
+                remainingTime = endTime - Date.now();
+                clearInterval(scheduledEvent);
+                scheduledEvent = null;
+                isPaused = true;
+                statusLabel.textContent = `Paused\nTransition: ${currentPhase + 1}\nNumber: ${lastPlayedNumber + 1}`;
+            }
+        }
+
+        function restartProcess() {
+            if (scheduledEvent) {
+                clearInterval(scheduledEvent);
+                scheduledEvent = null;
+            }
+            currentPhase = 0;
+            isPaused = false;
+            endTime = 0;
+            lastPlayedNumber = null;
+            remainingTime = 0;
+            statusLabel.textContent = "Press play to start the process";
+        }
+
+        playButton.addEventListener("click", startProcess);
+        pauseButton.addEventListener("click", pauseProcess);
+        restartButton.addEventListener("click", restartProcess);
+    </script>
+</body>
+</html>
